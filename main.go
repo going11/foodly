@@ -28,6 +28,7 @@ func register(w http.ResponseWriter, req *http.Request) {
   log.Println("contacts /register")
   w.Header().Add("content-type", "application/json")
   var t RegisterRequest
+  var result bson.M
   ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
   defer cancel()
   client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
@@ -40,6 +41,13 @@ func register(w http.ResponseWriter, req *http.Request) {
   }
   err = json.NewDecoder(req.Body).Decode(&t)
   collection := client.Database("foodly-go").Collection("users")
+  err = collection.FindOne(ctx, bson.M{"username": t.username}).Decode(&result)
+  if err != nil {
+    data := map[string]string{"error": "ripitdious username"}
+    res, _ := json.Marshal(data)
+    http.Error(w, string(res), http.StatusBadRequest)
+    return
+  }
   token := GenerateToken(t.password)
   _, err = collection.InsertOne(ctx, bson.M{"username": t.username, "password": Hash(t.password), "city":t.city, "email":t.email, "role":t.role, "token": token})
   data := map[string]string{"token": token}
@@ -79,5 +87,6 @@ func main() {
   r.HandleFunc("/login", login).Methods("POST")
   r.HandleFunc("/register", register).Methods("POST")
   r.HandleFunc("/ok", ok)
+  fmt.Println("starting Server")
   http.ListenAndServe(":5000", r)
 }
