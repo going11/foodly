@@ -15,3 +15,9 @@ func GenerateToken(pass string) string {
   hasher.Write(hash)
   return hex.EncodeToString(hasher.Sum(nil))
 }
+
+func Hash(input string) string {
+  h := md5.New()
+  h.Write([]byte(input))
+  return string(h.Sum(nil))
+}

@@ -3,6 +3,7 @@ module github.com/hoomanist/foodly
 go 1.15
 
 require (
+	github.com/gorilla/mux v1.8.0 // indirect
 	go.mongodb.org/mongo-driver v1.4.2
-	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
 )
