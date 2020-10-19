@@ -34,12 +34,11 @@ func register(w http.ResponseWriter, req *http.Request) {
   defer client.Disconnect(ctx)
   err = client.Ping(ctx, readpref.Primary())
   if err != nil {
-    http.Error(w, "Unable to connect to db. Please try again later!", http.StatusInternalServerError)
+    data := map[string]string{"error": "Unable to connect to db. Please try again later!"}
+    res, _ := json.Marshal(data)
+    http.Error(w, string(res) ,http.StatusInternalServerError)
   }
   err = json.NewDecoder(req.Body).Decode(&t)
-  if err != nil {
-    http.Error(w, "unable to parse json", http.StatusBadRequest)
-  }
   collection := client.Database("foodly-go").Collection("users")
   token := GenerateToken(t.password)
   _, err = collection.InsertOne(ctx, bson.M{"username": t.username, "password": Hash(t.password), "city":t.city, "email":t.email, "role":t.role, "token": token})
@@ -60,16 +59,17 @@ func login(w http.ResponseWriter, req *http.Request){
   defer client.Disconnect(ctx)
   err = client.Ping(ctx, readpref.Primary())
   if err != nil {
-    http.Error(w, "Unable to connect to db. Please try again later!", http.StatusInternalServerError)
+    data := map[string]string{"error": "Unable to connect to db. Please try again later!"}
+    res, _ := json.Marshal(data)
+    http.Error(w, string(res),http.StatusInternalServerError)
   }
   err = json.NewDecoder(req.Body).Decode(&t)
-  if err != nil {
-    http.Error(w, "Wrong Request", http.StatusBadRequest)
-  }
   collection := client.Database("foodly-go").Collection("users")
   err = collection.FindOne(ctx, bson.M{"username": t.username, "password": Hash(t.password)}).Decode(&result)
   if err != nil {
-    http.Error(w, "User not found. maybe your password is incorrect", http.StatusBadRequest)
+    data := map[string]string{"error": "User not found. maybe your password is incorrect"}
+    res, _ := json.Marshal(data)
+    http.Error(w, string(res), http.StatusBadRequest)
   }
   json.NewEncoder(w).Encode(result)
 }
