@@ -7,6 +7,7 @@ import (
   "encoding/json"
   "context"
   "time"
+  //"reflect"
   "github.com/gorilla/mux"
   "go.mongodb.org/mongo-driver/mongo"
   "go.mongodb.org/mongo-driver/mongo/options"
@@ -38,21 +39,21 @@ func register(w http.ResponseWriter, req *http.Request) {
     data := map[string]string{"error": "Unable to connect to db. Please try again later!"}
     res, _ := json.Marshal(data)
     http.Error(w, string(res) ,http.StatusInternalServerError)
+    return
   }
   err = json.NewDecoder(req.Body).Decode(&t)
   collection := client.Database("foodly-go").Collection("users")
   err = collection.FindOne(ctx, bson.M{"username": t.username}).Decode(&result)
-  if err != nil {
-    data := map[string]string{"error": "ripitdious username"}
-    res, _ := json.Marshal(data)
-    http.Error(w, string(res), http.StatusBadRequest)
-    return
-  }
+  // if err == nil {
+  //   fmt.Println(err)
+  //   data := map[string]string{"error": "ripitdious username"}
+  //   res, _ := json.Marshal(data)
+  //   http.Error(w, string(res), http.StatusBadRequest)
+  //   return
+  // }
   token := GenerateToken(t.password)
   _, err = collection.InsertOne(ctx, bson.M{"username": t.username, "password": Hash(t.password), "city":t.city, "email":t.email, "role":t.role, "token": token})
-  data := map[string]string{"token": token}
-  res, _ := json.Marshal(data)
-  fmt.Fprintf(w, string(res))
+  json.NewEncoder(w).Encode(result)
 }
 
 // login 
@@ -70,14 +71,17 @@ func login(w http.ResponseWriter, req *http.Request){
     data := map[string]string{"error": "Unable to connect to db. Please try again later!"}
     res, _ := json.Marshal(data)
     http.Error(w, string(res),http.StatusInternalServerError)
+    return
   }
   err = json.NewDecoder(req.Body).Decode(&t)
   collection := client.Database("foodly-go").Collection("users")
   err = collection.FindOne(ctx, bson.M{"username": t.username, "password": Hash(t.password)}).Decode(&result)
   if err != nil {
+    fmt.Println(err)
     data := map[string]string{"error": "User not found. maybe your password is incorrect"}
     res, _ := json.Marshal(data)
     http.Error(w, string(res), http.StatusBadRequest)
+    return
   }
   json.NewEncoder(w).Encode(result)
 }
